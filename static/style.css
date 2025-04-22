@@ -1,0 +1,10 @@
+body { background: #181b21; color: #f8f9fa; }
+.card, .modal-content { background: #23272f; border-radius: 16px; }
+.table-dark { background: #23272f; }
+.btn-success { background: #00ff99; border: none; color: #181b21; font-weight: bold; }
+.btn-success:hover { background: #00d17a; }
+.navbar { background: #181b21; border-bottom: 1px solid #23272f; }
+.logo { font-size: 1.7rem; color: #00ff99; font-weight: bold; letter-spacing: 2px; }
+.footer { color: #888; font-size: 0.9rem; text-align: center; margin-top: 40px; }
+::-webkit-scrollbar { width: 10px; background: #23272f; }
+::-webkit-scrollbar-thumb { background: #181b21; border-radius: 10px; }

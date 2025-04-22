@@ -1,0 +1,10 @@
+flask
+requests
+opencv-python
+pillow
+pynput
+pyautogui
+psutil
+geocoder
+sounddevice
+numpy

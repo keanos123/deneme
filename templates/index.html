@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keanos RAT Web Panel</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-dark text-light">
+    <div class="container py-4">
+        <h2 class="mb-4">Keanos RAT Web Panel</h2>
+        <div class="card bg-secondary mb-4">
+            <div class="card-header">Bağlı İstemciler</div>
+            <div class="card-body">
+                <table class="table table-dark table-striped">
+                    <thead>
+                        <tr><th>ID</th><th>IP</th><th>Bağlanma Zamanı</th><th>Komut</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for c in clients %}
+                        <tr>
+                            <td>{{ c.id }}</td>
+                            <td>{{ c.ip }}</td>
+                            <td>{{ c.time }}</td>
+                            <td>
+                                <form action="/send_command" method="post" class="d-flex send-cmd-form">
+                                    <input type="hidden" name="client_id" value="{{ c.id }}">
+                                    <input type="text" name="command" class="form-control form-control-sm me-2" placeholder="Komut">
+                                    <button class="btn btn-sm btn-success">Gönder</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <form id="bulk-cmd-form" class="input-group">
+                            <select id="bulk-action" class="form-select" style="max-width:160px;">
+                                <option value="update">Otomatik Güncelle</option>
+                                <option value="restart">Yeniden Başlat</option>
+                                <option value="shutdown">Kapat</option>
+                                <option value="custom">Özel Komut</option>
+                            </select>
+                            <input type="text" id="custom-cmd" class="form-control" placeholder="Komut" style="display:none;">
+                            <button class="btn btn-danger">Toplu Gönder</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+    $(function(){
+        $('.send-cmd-form').submit(function(e){
+            e.preventDefault();
+            var form = $(this);
+            $.post('/send_command', form.serialize(), function(resp){
+                if(resp.status === 'success'){
+                    alert('Komut gönderildi!');
+                }else{
+                    alert('Komut gönderilemedi!');
+                }
+            });
+        });
+        $('#bulk-action').change(function(){
+            if($(this).val()==='custom'){
+                $('#custom-cmd').show();
+            }else{
+                $('#custom-cmd').hide();
+            }
+        });
+        $('#bulk-cmd-form').submit(function(e){
+            e.preventDefault();
+            var action = $('#bulk-action').val();
+            var cmd = '';
+            if(action==='update') cmd = 'update_client';
+            else if(action==='restart') cmd = 'restart_client';
+            else if(action==='shutdown') cmd = 'shutdown_client';
+            else if(action==='custom') cmd = $('#custom-cmd').val();
+            $.post('/bulk_command', {cmd: cmd}, function(resp){
+                alert(resp.status);
+            });
+        });
+    });
+    </script>
+</body>
+</html>
